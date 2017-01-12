@@ -13,11 +13,14 @@ classdef CasadiFunction < Function
   
   methods
     
-    function self = CasadiFunction(inputFunction,jit)
+    function self = CasadiFunction(inputFunction,jit,expand)
       self = self@Function(inputFunction.functionHandle,inputFunction.inputSizes,inputFunction.nOutputs);
       
-      if nargin ==1
+      if nargin == 1
         jit = false;
+        expand = false;
+      elseif nargin == 2
+        expand = false;
       end
       
       N = length(self.inputSizes);
@@ -33,6 +36,9 @@ classdef CasadiFunction < Function
       self.numericOutputValues = outputs(self.numericOutputIndizes);
       
       self.fun = casadi.Function('fun',inputs,outputs,struct('jit',jit));
+      if expand
+        self.fun.expand();
+      end
       if jit
         delete jit_tmp.c
       end
@@ -40,13 +46,18 @@ classdef CasadiFunction < Function
     
     function varargout = evaluate(self,varargin)
       varargout = cell(1,self.nOutputs);
+      
+      if self.compiled
+          nlpFun('fun',varargin{1},varargin{2})
+      end
       [varargout{:}] = self.fun(varargin{:});
       
       % replace numerical outputs
       varargout(self.numericOutputIndizes) = self.numericOutputValues;
     end
     
-    function compile(self)
+    function compile(self,name)
+      self.name = name;
       global exportDir
       currentDir = pwd;
       cd(exportDir)

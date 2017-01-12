@@ -29,17 +29,24 @@ function runTests(version,changeMessage)
   %% run examples
   exampleTestsResult = runTest('Example',@Example);
 
-  %% save results
-  fileName = [datestr(now,'yyyy-mm-dd_HHMMSS') '.txt'];
-  filePath = fullfile(testDir,fileName);
-  resultsFile = fopen(filePath,'w');
-  fprintf(resultsFile,'Test on %s\nVersion: %s\nChange message: %s\n\n',datestr(now),version,changeMessage);
-  printResults(coreTestsResult);
-  printResults(casadiTestsResult);
-  printResults(exampleTestsResult);
-  fclose(resultsFile);
-
+  %% display and save results
+  testOuput = {};
+  testOuput{end+1} = sprintf('Test on %s\nVersion: %s\nChange message: %s\n\n',datestr(now),version,changeMessage);
+  testOuput{end+1} = getTestOutput(coreTestsResult);
+  testOuput{end+1} = getTestOutput(casadiTestsResult);
+  testOuput{end+1} = getTestOutput(exampleTestsResult);
+  fprintf([testOuput{:}]);
   
+  prompt = input('Save result to file? (y,n)','s');
+  if strcmp(prompt,'y') || strcmp(prompt,'yes')
+    fileName = [datestr(now,'yyyy-mm-dd_HHMMSS') '.txt'];
+    filePath = fullfile(testDir,fileName);
+    resultsFile = fopen(filePath,'w');
+    fprintf(resultsFile,[testOuput{:}]);
+    fclose(resultsFile);
+  end
+
+  %% local functions 
   function testResult = runTest(testName,scriptHandle)
     testResult = struct;
     testResult.name = testName;
@@ -56,15 +63,13 @@ function runTests(version,changeMessage)
     end
   end
 
-  function printResults(testResult)
+  function outputString = getTestOutput(testResult)
     if testResult.passed
-    	outputString = sprintf('%s Tests passed\n',testResult.name);
-      fprintf(resultsFile,outputString);fprintf(outputString);
-      outputString = sprintf('It took %.4f seconds.\n\n',testResult.runtime);
-      fprintf(resultsFile,outputString);fprintf(outputString);
+      s1 = sprintf('%s Tests passed\n',testResult.name);
+      s2 = sprintf('It took %.4f seconds.\n\n',testResult.runtime);
+      outputString = [s1,s2];
     else
       outputString = sprintf('%s Tests failed\n',testResult.name);
-      fprintf(resultsFile,outputString);fprintf(outputString);
       disp(getReport(testResult.exception))
     end
   end
