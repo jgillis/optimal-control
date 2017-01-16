@@ -71,6 +71,8 @@ classdef CasadiNLPSolver < Solver
 
       % turn nlp function into casadi function and call
       casadiNLPFun = self.nlp.nlpFun;
+      
+      
       [costs,constraints,constraints_LB,constraints_UB] = casadiNLPFun.evaluate(vsym,psym);
 
       casadiNLP = struct;
@@ -81,6 +83,10 @@ classdef CasadiNLPSolver < Solver
       
       opts = self.options.nlp.casadi;
       opts.(self.options.nlp.solver) = self.options.nlp.(self.options.nlp.solver);
+      JitOptions = struct;
+      JitOptions.flags = '-O0';
+      opts.jit_options = JitOptions;
+      opts.jit = false;
       
       if self.options.iterationCallback == true
         initialGuess = self.nlp.getInitialGuess;

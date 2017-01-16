@@ -9,6 +9,9 @@ classdef OCPHandler < handle
     pathConstraintsFun
     leastSquaresCostsFun
     
+    stateVars
+    controlVars
+    
   end
   
   properties(Access = private)
@@ -36,9 +39,11 @@ classdef OCPHandler < handle
       self.pathConstraintsFun = Function(@self.getPathConstraints,{[nx 1],[nz 1],[nu 1],[1 1],[np 1]},3);
       
       
-      states = nlpVars.get('state');
-      controls = nlpVars.get('controls');
-      self.leastSquaresCostsFun = Function(@self.getLeastSquaresCosts,{states,controls},1);
+      self.stateVars = nlpVars.get('state');
+      self.controlVars = nlpVars.get('controls');
+      nX = prod(size(self.stateVars));
+      nU = prod(size(self.controlVars));
+      self.leastSquaresCostsFun = Function(@self.getLeastSquaresCosts,{[nX 1],[nU 1]},1);
       
     end
     
@@ -122,8 +127,11 @@ classdef OCPHandler < handle
       terminalCosts = self.ocp.getTerminalCosts(self.model.state,time,p);
     end
     
-    function cost = getLeastSquaresCosts(self,stateVars,controlVars)
-      N = controlVars.getNumberOfVars;
+    function cost = getLeastSquaresCosts(self,states,controls)
+        
+      self.stateVars.set(states);
+      self.controlVars.set(controls);
+      N = self.controlVars.getNumberOfVars;
       costTermList = self.ocp.getLeastSquaresCost();
       cost = 0;
       for k = 1:length(costTermList)
@@ -131,21 +139,22 @@ classdef OCPHandler < handle
         
         if strcmp(costTerm.type,'state')
           % find id in states
-          stateTraj = stateVars.get(costTerm.id).value;
-          trackingError = stateTraj-costTerm.reference';
+          stateTraj = self.stateVars.get(costTerm.id).flat;
+          reference = reshape(costTerm.reference',length(stateTraj),1);
+          trackingError = stateTraj-reference;
           % repeat weighting for whole trajectory
           W = repmat({costTerm.weighting},N+1,1);
           W = sparse(blkdiag(W{:}));
           
         else strcmp(costTerm.type,'controls')
           % find id in controls
-          controlsTraj = controlVars.get(costTerm.id).value;
-          trackingError = controlsTraj-costTerm.reference';
+          controlsTraj = self.controlVars.get(costTerm.id).flat;
+          reference = reshape(costTerm.reference',length(controlsTraj),1);
+          trackingError = controlsTraj-reference;
           % repeat weighting for whole trajectory
           W = repmat({costTerm.weighting},N,1);
           W = sparse(blkdiag(W{:}));
         end
-        trackingError = reshape(trackingError,numel(trackingError),1);
         cost = cost + trackingError'* W * trackingError;
       end
       

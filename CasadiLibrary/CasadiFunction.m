@@ -13,20 +13,22 @@ classdef CasadiFunction < Function
   
   methods
     
-    function self = CasadiFunction(inputFunction,jit,expand)
+    function self = CasadiFunction(name,inputFunction,jit,expand)
       self = self@Function(inputFunction.functionHandle,inputFunction.inputSizes,inputFunction.nOutputs);
       
-      if nargin == 1
+      self.name = name;
+      
+      if nargin == 2
         jit = false;
         expand = false;
-      elseif nargin == 2
+      elseif nargin == 3
         expand = false;
       end
       
       N = length(self.inputSizes);
       inputs = cell(1,N);
       for k=1:N
-        inputs{k} = casadi.MX.sym('in',self.inputSizes{k});
+        inputs{k} = casadi.MX.sym(['in_' num2str(k)],self.inputSizes{k});
       end
       outputs = cell(1,self.nOutputs);
       [outputs{:}] = self.functionHandle(inputs{:});
@@ -35,7 +37,7 @@ classdef CasadiFunction < Function
       self.numericOutputIndizes = logical(cellfun(@isnumeric,outputs));
       self.numericOutputValues = outputs(self.numericOutputIndizes);
       
-      self.fun = casadi.Function('fun',inputs,outputs,struct('jit',jit));
+      self.fun = casadi.Function(name,inputs,outputs,struct('jit',jit));
       if expand
         self.fun.expand();
       end
@@ -47,9 +49,9 @@ classdef CasadiFunction < Function
     function varargout = evaluate(self,varargin)
       varargout = cell(1,self.nOutputs);
       
-      if self.compiled
-          nlpFun('fun',varargin{1},varargin{2})
-      end
+%       if self.compiled
+%           pathCostsFun('fun',varargin{1},varargin{2})
+%       end
       [varargout{:}] = self.fun(varargin{:});
       
       % replace numerical outputs
