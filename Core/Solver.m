@@ -54,19 +54,21 @@ classdef Solver < handle
       ocpHandler = OCPHandler(ocp,nlp.nlpVars);
 
       nlp.setOcpHandler(ocpHandler);
+      
+      
+      ocpHandler.pathCostsFun           = CasadiFunction('pathcosts',ocpHandler.pathCostsFun,false,true);
+
       integrator.setPathCostsFun(ocpHandler.pathCostsFun);
       
-      ocpHandler.pathCostsFun           = CasadiFunction(ocpHandler.pathCostsFun,false,true);
-      ocpHandler.terminalCostsFun       = CasadiFunction(ocpHandler.terminalCostsFun,false,true);
-      ocpHandler.boundaryConditionsFun  = CasadiFunction(ocpHandler.boundaryConditionsFun,false,true);
-      ocpHandler.pathConstraintsFun     = CasadiFunction(ocpHandler.pathConstraintsFun,false,true);
-      nlp.integratorFun          = CasadiFunction(nlp.integratorFun,false,true);
-%       ocpHandler.leastSquaresCostsFun   = CasadiFunction(ocpHandler.leastSquaresCostsFun);
-
-      nlp.nlpFun = CasadiFunction(nlp.nlpFun,false,false);
       
-      ocpHandler.pathCostsFun.compile('pathCostsFun')
-%        nlp.nlpFun.compile('nlpFun');
+      ocpHandler.terminalCostsFun       = CasadiFunction('termcosts',ocpHandler.terminalCostsFun,false,true);
+      ocpHandler.boundaryConditionsFun  = CasadiFunction('boundconds',ocpHandler.boundaryConditionsFun,false,true);
+      ocpHandler.pathConstraintsFun     = CasadiFunction('pathconstr',ocpHandler.pathConstraintsFun,false,true);
+      nlp.integratorFun          = CasadiFunction('integrator',nlp.integratorFun,false,true);
+      
+      ocpHandler.leastSquaresCostsFun   = CasadiFunction('leastsquares',ocpHandler.leastSquaresCostsFun,false,true);
+%       nlp.nlpFun = CasadiFunction('nlp',nlp.nlpFun,false,false);
+%       nlp.nlpFun.compile('nlpFun');
 
       if strcmp(options.solverInterface,'casadi')
         solver = CasadiNLPSolver(nlp,options);

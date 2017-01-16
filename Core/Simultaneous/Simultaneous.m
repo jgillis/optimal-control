@@ -18,9 +18,6 @@ classdef Simultaneous < handle
     ni
     np
     
-    stateVars
-    controlVars
-    
     isCollocation
     lowerBounds
     upperBounds
@@ -41,19 +38,7 @@ classdef Simultaneous < handle
       
       
       self.isCollocation = true;
-      
-      
-      state = model.state;
-      self.stateVars = Var('states');
-      self.stateVars.addRepeated(state,N+1);
-      self.stateVars.compile;
-      
-      controls = model.controls;
-      self.controlVars = Var('controls');
-      self.controlVars.addRepeated(controls,N);
-      self.controlVars.compile;
-      
-      
+
       integratorVars = integrator.getIntegratorVars;
       self.nlpVars = Var('nlpVars');
       self.nlpVars.addRepeated([self.model.state,...
@@ -131,9 +116,9 @@ classdef Simultaneous < handle
       thisState = initialState;
       curIndex = self.nx;
       
-      states = cell(1,self.N+1);
-      states{1} = initialState;
-      controls = cell(1,self.N);
+
+      states = initialState;
+      controls = [];
       
       for k=1:self.N
         
@@ -141,7 +126,7 @@ classdef Simultaneous < handle
         curIndex = curIndex+self.ni;
         
         thisControl = nlpInputs(curIndex+1:curIndex+self.nu);
-        controls{k} = thisControl;
+        controls = [controls;thisControl];
         curIndex = curIndex+self.nu;
         
         % add integrator equation in case of direction collocation
@@ -164,7 +149,7 @@ classdef Simultaneous < handle
         
         % go to next time gridpoint
         thisState = nlpInputs(curIndex+1:curIndex+self.nx);
-        states{k+1} = thisState;
+        states = [states;thisState];
         curIndex = curIndex+self.nx;
         
         % path constraints
@@ -184,9 +169,7 @@ classdef Simultaneous < handle
       costs = costs + terminalCosts;
       
       % add least squares (tracking) cost
-      self.stateVars.set([states{:}]);
-      self.controlVars.set([controls{:}]);
-      costs = costs + self.ocpHandler.leastSquaresCostsFun.evaluate(self.stateVars,self.controlVars);
+      costs = costs + self.ocpHandler.leastSquaresCostsFun.evaluate(states,controls);
 
       % add terminal constraints
       [boundaryConditions,lb,ub] = self.ocpHandler.boundaryConditionsFun.evaluate(initialState,thisState,parameters);

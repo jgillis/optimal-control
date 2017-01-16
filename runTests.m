@@ -6,6 +6,7 @@ function runTests(version,changeMessage)
   % of test will differ from preious versions.
   
   StartupOC
+  
   global testDir
   
   if nargin == 0
