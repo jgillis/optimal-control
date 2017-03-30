@@ -57,36 +57,86 @@ classdef CasadiFunction < handle
       self.numericOutputValues = outputs(self.numericOutputIndizes);
       
       self.casadiFun = casadi.Function('fun',inputs,outputs,struct('jit',jit));
-%       self.casadiFun.expand();
+      self.casadiFun.expand();
       if jit
         delete jit_tmp.c
       end
     end
     
     function varargout = evaluate(self,varargin)
-          
-      % evaluate casadi function
-      varargout = cell(1,self.fun.nOutputs);
-      [varargout{:}] = self.casadiFun(varargin{:});
       
-      % replace numerical outputs
-      varargout(self.numericOutputIndizes) = self.numericOutputValues;
+      global exportDir
+      
+      if self.compiled
+        cFilePath = fullfile(exportDir,[self.name]);
+        
+        opts = struct;
+        opts.flags = '-O3';
+%         funImporter = casadi.Importer(cFilePath, 'clang',opts);
+        externalCasadiFun = casadi.external('fun', [cFilePath '.mexw64']);
+        
+        varargout = cell(1,self.fun.nOutputs);
+        [varargout{:}] = externalCasadiFun(varargin{:});
+
+        % replace numerical outputs
+        varargout(self.numericOutputIndizes) = self.numericOutputValues;
+        
+      else
+        % evaluate casadi function
+        varargout = cell(1,self.fun.nOutputs);
+        [varargout{:}] = self.casadiFun(varargin{:});
+
+        % replace numerical outputs
+        varargout(self.numericOutputIndizes) = self.numericOutputValues;
+      end
     end
     
-    function compile(self)
+    function compile(self,name)
+      
+      self.name = name;
+      
       global exportDir
       currentDir = pwd;
       cd(exportDir)
-      opts = struct;
-      opts.mex = true;
+      
+      codeGenerator = casadi.CodeGenerator(self.name,struct('mex',true));
+      codeGenerator.add(self.casadiFun);
+      
+      MAX_NUM_SEEDS = 1;
+      
+      for i=1:MAX_NUM_SEEDS
+        fwd    = self.casadiFun.forward(i);
+        adj    = self.casadiFun.reverse(i);
+        fwd_over_reverse = adj.forward(i);
+
+        codeGenerator.add(fwd)
+        codeGenerator.add(adj)
+        codeGenerator.add(fwd_over_reverse)
+      end
+      
       cFilePath = fullfile(exportDir,[self.name '.c']);
-      self.fun.generate([self.name '.c'],opts)
+      codeGenerator.generate;
       cd(currentDir)
       
       % compile generated code as mex file
-      mex(cFilePath,'-largeArrayDims')
+      mex(cFilePath, '-largeArrayDims')
       self.compiled = true;
     end
+
+%     function compile(self)
+%       global exportDir
+%       currentDir = pwd;
+%       cd(exportDir)
+%       opts = struct;
+%       opts.mex = true;
+%       cFilePath = fullfile(exportDir,[self.name '.c']);
+%       self.fun.generate([self.name '.c'],opts)
+%       cd(currentDir)
+%       
+%       % compile generated code as mex file
+%       mex(cFilePath,'-largeArrayDims')
+%       self.compiled = true;
+%     end
     
   end
 end

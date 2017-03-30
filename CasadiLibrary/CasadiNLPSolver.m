@@ -27,7 +27,7 @@ classdef CasadiNLPSolver < Solver
     end
     
     
-    function [outVars,times,objective,constraints] = solve(self,initialGuess)
+    function [outVars,times,objective,constraints,outputs] = solve(self,initialGuess)
       % solve(self,initialGuess)
       
       self.initialGuess = initialGuess;
@@ -150,6 +150,19 @@ classdef CasadiNLPSolver < Solver
         
         initialGuess.set(x);
         outVars = initialGuess;
+        
+        
+        % outputs
+        states = outVars.get('state');
+        algVars = outVars.get('integratorVars').get('algVars');
+        controls = outVars.get('controls');
+        parameters = outVars.get('parameters');
+        
+        outputs = Var('outputs');
+        for k=2:outVars.get('state').getNumberOfVars
+          outputs.add(self.nlp.system.getOutputs(states.get('state',k),algVars.get('algVars',k),controls.get('controls',k),parameters));
+        end
+          
       end
       
     end
@@ -168,14 +181,14 @@ classdef CasadiNLPSolver < Solver
       
       % create symbolic casadi variables for all decision variables
       nv = prod(size(vars));
-      vsym = cell(1,nv);
-      for k=1:nv
-        vsym{k} = casadi.MX.sym(['v' num2str(k)],[1 1]);
-      end
-      vsymMat = vertcat(vsym{:});
+%       vsym = cell(1,nv);
+%       for k=1:nv
+%         vsym{k} = casadi.MX.sym(['v' num2str(k)],[1 1]);
+%       end
+%       vsymMat = vertcat(vsym{:});
 
-%       vsym = casadi.MX.sym('v',[nv 1]);
-%       vsymMat = vsym;
+      vsym = casadi.MX.sym('v',[nv 1]);
+      vsymMat = vsym;
       
       
       % apply scaling

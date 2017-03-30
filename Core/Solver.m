@@ -19,8 +19,9 @@ classdef Solver < handle
       options.nlp.discretizationPoints  = 20;
       options.nlp.collocationOrder      = 3;
       options.nlp.solver                = 'ipopt';
-      options.nlp.scaling               = true;
-      options.nlp.detectParameters      = true;
+      options.nlp.scaling               = false;
+      options.nlp.detectParameters      = false;
+      options.nlp.outputLifting         = false;
 
       options.nlp.casadi.iteration_callback_step = 1;
       
@@ -62,8 +63,16 @@ classdef Solver < handle
 %       ocpHandler.arrivalCostsFun        = CasadiFunction(ocpHandler.arrivalCostsFun);
 %       ocpHandler.boundaryConditionsFun  = CasadiFunction(ocpHandler.boundaryConditionsFun);
 %       ocpHandler.pathConstraintsFun     = CasadiFunction(ocpHandler.pathConstraintsFun);
+
+
       system.systemFun                  = CasadiFunction(system.systemFun);
+      system.systemFun.compile('systemFun')      
+
+
 %       nlp.integratorFun                 = CasadiFunction(nlp.integratorFun);
+%       nlp.integratorFun.compile('integratorFun')
+      
+
 
     end
     

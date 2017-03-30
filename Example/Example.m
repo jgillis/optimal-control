@@ -1,7 +1,7 @@
 StartupOC
 
 FINALTIME = 10;               % horizon length (seconds)
-DISCRETIZATIONPOINTS = 30;    % horizon discretization
+DISCRETIZATIONPOINTS = 20;    % horizon discretization
 
 % Create system and OCP
 system = ExampleSystem;
@@ -14,8 +14,9 @@ options.nlp.discretizationPoints = DISCRETIZATIONPOINTS;
 options.nlp.collocationOrder = 3;
 options.nlp.ipopt.linear_solver = 'mumps';
 options.nlp.solver = 'ipopt';
-options.nlp.scaling = true;
-options.nlp.detectParameters = true;
+options.nlp.outputLifting = true;
+options.nlp.scaling = false;
+options.nlp.detectParameters = false;
 
 % options.nlp.solver = 'sqpmethod';
 % options.nlp.casadi.qpsol = 'qpoases';
@@ -52,7 +53,7 @@ initialGuess = nlp.getInitialGuess;
 initialGuess.get('state').get('x').set(-0.2);
 
 % Run solver to obtain solution
-[solution,times] = solver.solve(initialGuess);
+[solution,times,~,~,outputs] = solver.solve(initialGuess);
 
 figure
 hold on 
