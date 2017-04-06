@@ -17,6 +17,14 @@ classdef ExampleSystem < System
       self.addAlgVar('z',[3,1]);
       
     end
+    
+    function setupOutputs(self,state,algVars,controls,parameters)
+      x = state.get('x').value;
+      y = state.get('y').value;
+      self.setOutput('sum',x+y);
+      self.setOutput('sum2',(x+y)^2);
+    end
+    
     function setupEquation(self,state,algVars,controls,parameters)
       % The differential and algebraic equations of the system are 
       % implemented in the setupEquation method

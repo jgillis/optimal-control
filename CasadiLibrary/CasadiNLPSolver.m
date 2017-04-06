@@ -27,7 +27,7 @@ classdef CasadiNLPSolver < Solver
     end
     
     
-    function [outVars,times,objective,constraints] = solve(self,initialGuess)
+    function [outVars,times,objective,constraints,outputs] = solve(self,initialGuess)
       % solve(self,initialGuess)
       
       self.initialGuess = initialGuess;
@@ -150,6 +150,19 @@ classdef CasadiNLPSolver < Solver
         
         initialGuess.set(x);
         outVars = initialGuess;
+        
+        
+        % outputs
+        states = outVars.get('state');
+        algVars = outVars.get('integratorVars').get('algVars');
+        controls = outVars.get('controls');
+        parameters = outVars.get('parameters');
+        
+        outputs = Var('outputs');
+        for k=2:outVars.get('state').getNumberOfVars
+          outputs.add(self.nlp.system.getOutputs(states.get('state',k),algVars.get('algVars',k),controls.get('controls',k),parameters));
+        end
+          
       end
       
     end

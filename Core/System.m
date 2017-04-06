@@ -11,11 +11,12 @@ classdef (Abstract) System < handle
     parameters
     ode
     alg
+    outputs
     
     initialConditions
     
-    algEqIndex    = 1;
     systemFun
+    outputFun
   end
   
   methods (Abstract)
@@ -41,29 +42,40 @@ classdef (Abstract) System < handle
 
       self.ode         = Var('ode');
       self.alg         = Var('alg');
+      self.outputs     = Var('outputs');
       
       self.setupVariables;
-      
+            
       self.state.compile;
-      self.algVars.compile;
+
       self.controls.compile;
       self.parameters.compile;
-      self.ode.compile;
-      self.alg.compile;
       
       self.systemFun = UserFunction(@self.evaluate,{self.state,self.algVars,self.controls,self.parameters},2);
-      
+      self.outputFun = UserFunction(@self.getOutputs,{self.state,self.algVars,self.controls,self.parameters},1);
     end
     
     function initialCondition(~,~,~)
     end
     
+    function setupOutputs(self,state,algVars,controls,parameters)
+    end
+    
+    function outputs = getOutputs(self,state,algVars,controls,parameters)
+      self.outputs     = Var('outputs');
+      self.setupOutputs(state,algVars,controls,parameters)
+      outputs = self.outputs;
+    end
+    
     function [ode,alg] = evaluate(self,state,algVars,controls,parameters)
       % evaluate the system equations for the assigned 
       
-      self.alg = Var('alg');
-
+      self.alg         = Var('alg');
+      
       self.setupEquation(state,algVars,controls,parameters);
+      
+      self.ode.compile;
+      self.alg.compile;
       
       ode = self.ode;
       alg = self.alg;
@@ -82,7 +94,6 @@ classdef (Abstract) System < handle
     function addParameter(self,id,size)
       self.parameters.add(id,size);
     end
-    
     
     function state = getState(self,id)
       state = self.state.get(id).value;
@@ -106,6 +117,9 @@ classdef (Abstract) System < handle
       self.alg.add(Var(equation,'algEq'));
     end
     
+    function setOutput(self,name,equation)
+      self.outputs.add(equation,name);
+    end
     
     function setInitialCondition(self,value)
       self.initialConditions = [self.initialConditions; value];      
@@ -126,12 +140,12 @@ classdef (Abstract) System < handle
     function solutionCallback(self,solution)
       
       N = solution.get('state').getNumberOfVars;
-      parameters = solution.get('parameters');
+      params = solution.get('parameters');
       
       for k=1:N-1
-        state = solution.get('state',k+1);
-        algVars = solution.get('integratorVars',k).get('algVars',3);
-        self.callIterationCallback(state,algVars,parameters);
+        thisState = solution.get('state',k+1);
+        thisAlgVars = solution.get('integratorVars',k).get('algVars',3);
+        self.callIterationCallback(thisState,thisAlgVars,params);
       end
       
     end
