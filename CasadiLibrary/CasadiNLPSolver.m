@@ -87,10 +87,10 @@ classdef CasadiNLPSolver < Solver
       
       % get struct with nlp for casadi
       casadiNLP = struct;
-      casadiNLP.x = vertcat(vsym{:});
+      casadiNLP.x = vsym;
       casadiNLP.f = costs;
       casadiNLP.g = constraints;
-      casadiNLP.p = vertcat(psym{:});
+      casadiNLP.p = psym;
       
       
       

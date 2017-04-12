@@ -72,8 +72,10 @@ classdef CasadiFunction < handle
         
         opts = struct;
         opts.flags = '-O3';
-%         funImporter = casadi.Importer(cFilePath, 'clang',opts);
-        externalCasadiFun = casadi.external('fun', [cFilePath '.mexw64']);
+        funImporter = evalin('base','funImporter');
+%         funImporter = casadi.Importer([exportDir '\' self.name '.c'], 'clang',opts);
+        externalCasadiFun = casadi.external('fun', funImporter);
+%         externalCasadiFun = casadi.external('fun', [cFilePath '.mexw64']);
         
         varargout = cell(1,self.fun.nOutputs);
         [varargout{:}] = externalCasadiFun(varargin{:});
@@ -102,25 +104,31 @@ classdef CasadiFunction < handle
       codeGenerator = casadi.CodeGenerator(self.name,struct('mex',true));
       codeGenerator.add(self.casadiFun);
       
-      MAX_NUM_SEEDS = 1;
-      
-      for i=1:MAX_NUM_SEEDS
-        fwd    = self.casadiFun.forward(i);
-        adj    = self.casadiFun.reverse(i);
-        fwd_over_reverse = adj.forward(i);
+      funJac = self.casadiFun.fullJacobian();
+      codeGenerator.add(funJac);
 
-        codeGenerator.add(fwd)
-        codeGenerator.add(adj)
-        codeGenerator.add(fwd_over_reverse)
-      end
+      funHes = funJac.fullJacobian();
+      codeGenerator.add(funHes);
+      
+%       MAX_NUM_SEEDS = 1;
+%       for i=1:MAX_NUM_SEEDS
+%         fwd    = self.casadiFun.forward(i);
+%         adj    = self.casadiFun.reverse(i);
+%         fwd_over_reverse = adj.forward(i);
+% 
+%         codeGenerator.add(fwd)
+%         codeGenerator.add(adj)
+%         codeGenerator.add(fwd_over_reverse)
+%       end
       
       cFilePath = fullfile(exportDir,[self.name '.c']);
       codeGenerator.generate;
-      cd(currentDir)
       
       % compile generated code as mex file
-      mex(cFilePath, '-largeArrayDims')
+%       mex(cFilePath, '-largeArrayDims')
       self.compiled = true;
+      
+      cd(currentDir)
     end
 
 %     function compile(self)

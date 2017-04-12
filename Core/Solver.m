@@ -66,7 +66,7 @@ classdef Solver < handle
 
 
       system.systemFun                  = CasadiFunction(system.systemFun);
-      system.systemFun.compile('systemFun')      
+%       system.systemFun.compile('systemFun')      
 
 
 %       nlp.integratorFun                 = CasadiFunction(nlp.integratorFun);
