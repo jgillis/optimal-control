@@ -18,13 +18,6 @@ classdef ExampleSystem < System
       
     end
     
-    function setupOutputs(self,state,algVars,controls,parameters)
-      x = state.get('x').value;
-      y = state.get('y').value;
-      self.setOutput('sum',x+y);
-      self.setOutput('sum2',(x+y)^2);
-    end
-    
     function setupEquation(self,state,algVars,controls,parameters)
       % The differential and algebraic equations of the system are 
       % implemented in the setupEquation method
@@ -39,8 +32,13 @@ classdef ExampleSystem < System
       self.setODE('x',(1-y^2)*x - y + u); 
       self.setODE('y',x);
       
+      algOut = [x;y;x+y+u];
+      
+      % define output
+      self.setOutput('algOut',algOut);
+      
       % Define algebraic equation
-      self.setAlgEquation(z - [x;y;x+y+u]);
+      self.setAlgEquation(z - algOut);
       
     end
   end

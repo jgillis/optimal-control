@@ -17,6 +17,10 @@ classdef (Abstract) System < handle
     
     systemFun
     outputFun
+    
+    requestOutputs = false
+    requestEquations = false
+    
   end
   
   methods (Abstract)
@@ -58,12 +62,13 @@ classdef (Abstract) System < handle
     function initialCondition(~,~,~)
     end
     
-    function setupOutputs(self,state,algVars,controls,parameters)
-    end
-    
     function outputs = getOutputs(self,state,algVars,controls,parameters)
       self.outputs     = Var('outputs');
-      self.setupOutputs(state,algVars,controls,parameters)
+      
+      self.requestOutputs = true;
+      self.setupEquation(state,algVars,controls,parameters)
+      self.requestOutputs = false;
+      
       outputs = self.outputs;
     end
     
@@ -72,7 +77,9 @@ classdef (Abstract) System < handle
       
       self.alg         = Var('alg');
       
+      self.requestEquations = true;
       self.setupEquation(state,algVars,controls,parameters);
+      self.requestEquations = false;
       
       self.ode.compile;
       self.alg.compile;
@@ -110,15 +117,21 @@ classdef (Abstract) System < handle
 
     function setODE(self,id,equation)
       %
-      self.ode.get([System.DOT_PREFIX id]).set(equation);
+      if self.requestEquations
+        self.ode.get([System.DOT_PREFIX id]).set(equation);
+      end
     end
     
     function setAlgEquation(self,equation)
-      self.alg.add(Var(equation,'algEq'));
+      if self.requestEquations
+        self.alg.add(Var(equation,'algEq'));
+      end
     end
     
     function setOutput(self,name,equation)
-      self.outputs.add(equation,name);
+      if self.requestOutputs
+        self.outputs.add(equation,name);
+      end
     end
     
     function setInitialCondition(self,value)
