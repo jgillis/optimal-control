@@ -144,24 +144,12 @@ classdef CasadiNLPSolver < Solver
         x(varIndizes) = xsol;
         x(paramIndizes) = params;
         
-        [objective,constraints,~,~,times] = self.nlp.nlpFun.evaluate(x);
+        [objective,constraints,~,~,times,outputs] = self.nlp.nlpFun.evaluate(x);
         objective = full(objective);
         constraints = full(constraints);
         
         initialGuess.set(x);
         outVars = initialGuess;
-        
-        
-        % outputs
-        states = outVars.get('state');
-        algVars = outVars.get('integratorVars').get('algVars');
-        controls = outVars.get('controls');
-        parameters = outVars.get('parameters');
-        
-        outputs = Var('outputs');
-        for k=2:outVars.get('state').getNumberOfVars
-          outputs.add(self.nlp.system.getOutputs(states.get('state',k),algVars.get('algVars',k),controls.get('controls',k),parameters));
-        end
           
       end
       
@@ -213,7 +201,7 @@ classdef CasadiNLPSolver < Solver
       
       % call nlp function
       casadiNLPFun = self.nlp.nlpFun;
-      [costs,constraints,constraints_LB,constraints_UB] = casadiNLPFun.evaluate(vsymMat);
+      [costs,constraints,constraints_LB,constraints_UB,~] = casadiNLPFun.evaluate(vsymMat);
       costs = costs + self.nlp.getDiscreteCost(vsymMat);
       
       

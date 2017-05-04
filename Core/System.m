@@ -56,17 +56,27 @@ classdef (Abstract) System < handle
       self.parameters.compile;
       
       self.systemFun = UserFunction(@self.evaluate,{self.state,self.algVars,self.controls,self.parameters},2);
-      self.outputFun = UserFunction(@self.getOutputs,{self.state,self.algVars,self.controls,self.parameters},1);
-    end
+  end
     
     function initialCondition(~,~,~)
     end
     
-    function outputs = getOutputs(self,state,algVars,controls,parameters)
-      self.outputs     = Var('outputs');
+    function outputs = getOutputs(self,statesVal,algVarsVal,controlsVal,parametersVal)
+      self.outputs     = Var('simOut');
+      
+      states = self.state.copy;
+      algVars = self.algVars.copy;
+      controls = self.controls.copy;
+      parameters = self.parameters.copy;
+      
+      states.set(statesVal);
+      algVars.set(algVarsVal);
+      controls.set(controlsVal);
+      parameters.set(parametersVal);
+      
       
       self.requestOutputs = true;
-      self.setupEquation(state,algVars,controls,parameters)
+      self.setupEquation(states,algVars,controls,parameters)
       self.requestOutputs = false;
       
       outputs = self.outputs;

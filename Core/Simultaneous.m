@@ -73,7 +73,7 @@ classdef Simultaneous < handle
       
       self.scalingMin = self.lowerBounds.copy;
       self.scalingMax = self.upperBounds.copy;
-
+     
     end
     
     function cost = getDiscreteCost(self,varValues)
@@ -178,7 +178,7 @@ classdef Simultaneous < handle
       
       nv = self.getNumberOfVars;
       pSize = self.getParameters.size;
-      self.nlpFun = Function(@self.getNLPFun,{[nv 1], pSize},5);
+      self.nlpFun = Function(@self.getNLPFun,{[nv 1], pSize},6);
     end
 
     function nv = getNumberOfVars(self)
@@ -189,7 +189,9 @@ classdef Simultaneous < handle
       np = self.np;
     end
 
-    function [costs,constraints,constraints_LB,constraints_UB,timeGrid] = getNLPFun(self,nlpInputs)
+    function [costs,constraints,constraints_LB,constraints_UB,timeGrid,outputs] = getNLPFun(self,nlpInputs)
+      
+      outputs = Var('outputs');
       
       T = nlpInputs(end);                         % end time
       parameters = nlpInputs(end-self.np:end-1);  % parameters
@@ -236,6 +238,10 @@ classdef Simultaneous < handle
         constraints = [constraints; thisState - finalState];
         constraints_LB = [constraints_LB; zeros(self.nx,1)];
         constraints_UB = [constraints_UB; zeros(self.nx,1)];
+        
+        % outputs
+        systemOutputs = self.system.getOutputs(thisState,finalAlgVars,thisControl,parameters);
+        outputs.add(systemOutputs);
       end
       
       % add terminal cost

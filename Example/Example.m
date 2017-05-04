@@ -53,7 +53,7 @@ initialGuess = nlp.getInitialGuess;
 initialGuess.get('state').get('x').set(-0.2);
 
 % Run solver to obtain solution
-[solution,times,~,~,outputs] = solver.solve(initialGuess);
+[solution,times,objective,constraints,outputs] = solver.solve(initialGuess);
 
 figure
 hold on 
